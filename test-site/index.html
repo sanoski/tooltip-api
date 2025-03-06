@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bible Tooltip</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .tooltip {
+            position: absolute;
+            background: #fff8dc;
+            border: 2px solid #d4a017;
+            padding: 10px;
+            display: none;
+            width: 250px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
+            font-family: Arial, sans-serif;
+            border-radius: 8px;
+            z-index: 9999;
+        }
+        .verse-link {
+            color: blue;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Testing Bible Tooltip</h2>
+    <p>Hover over these verses to see the tooltip:</p>
+
+    <p>
+        <span class="verse-link">Genesis 1:1</span>,
+        <span class="verse-link">Exodus 3:14</span>,
+        <span class="verse-link">Psalms 23:1</span>,
+        <span class="verse-link">Mark 16:15</span>,
+        <span class="verse-link">Revelation 21:4</span>
+    </p>
+
+    <!-- Tooltip Container -->
+    <div id="tooltip" class="tooltip"></div>
+
+    <!-- Load the Tooltip JavaScript -->
+    <script src="bible-tooltip.js"></script>
+
+</body>
+</html>
