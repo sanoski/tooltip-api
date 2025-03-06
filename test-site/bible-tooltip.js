@@ -1,23 +1,5 @@
 (async function() {
-    const API_URL = "https://tooltip-api.onrender.com/verse"; // Your live API URL
-
-    // List of Bible books to match
-    const bibleBooks = [
-        "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
-        "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
-        "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles",
-        "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
-        "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah",
-        "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel",
-        "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
-        "Zephaniah", "Haggai", "Zechariah", "Malachi",
-        "Matthew", "Mark", "Luke", "John", "Acts",
-        "Romans", "1 Corinthians", "2 Corinthians", "Galatians",
-        "Ephesians", "Philippians", "Colossians", "1 Thessalonians",
-        "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus",
-        "Philemon", "Hebrews", "James", "1 Peter", "2 Peter",
-        "1 John", "2 John", "3 John", "Jude", "Revelation"
-    ];
+    const API_URL = "https://tooltip-api.onrender.com/verse"; // Replace with your actual API URL
 
     function createTooltip() {
         const tooltip = document.createElement("div");
@@ -37,74 +19,85 @@
     }
 
     function findBibleReferences(text) {
-        const regex = new RegExp(`\\b(${bibleBooks.join("|")})\\s+(\\d+):(\\d+)\\b`, "g");
+        const regex = /\b([1-3]?\s?[A-Za-z]+)\s+(\d+):(\d+)\b/g;
         return [...text.matchAll(regex)];
     }
 
-    function replaceBibleReferences(node) {
-        if (node.nodeType !== 3) return; // Only process text nodes
-        const matches = findBibleReferences(node.nodeValue);
-        if (!matches.length) return;
+    function replaceBibleReferences() {
+        document.body.childNodes.forEach(node => {
+            if (node.nodeType !== 3) return; // Only process text nodes
 
-        const fragment = document.createDocumentFragment();
-        let lastIndex = 0;
+            const regex = /\b([1-3]?\s?[A-Za-z]+)\s+(\d+):(\d+)\b/g;
+            let matches = [...node.nodeValue.matchAll(regex)];
 
-        matches.forEach(match => {
-            const [fullMatch, book, chapter, verse] = match;
-            const beforeText = node.nodeValue.substring(lastIndex, match.index);
-            const refSpan = document.createElement("span");
-            refSpan.textContent = fullMatch;
-            refSpan.className = "bible-tooltip-ref";
-            refSpan.dataset.book = book;
-            refSpan.dataset.chapter = chapter;
-            refSpan.dataset.verse = verse;
-            refSpan.style.color = "blue";
-            refSpan.style.cursor = "pointer";
-            refSpan.style.textDecoration = "underline";
+            if (!matches.length) return;
 
-            fragment.appendChild(document.createTextNode(beforeText));
-            fragment.appendChild(refSpan);
-            lastIndex = match.index + fullMatch.length;
+            const fragment = document.createDocumentFragment();
+            let lastIndex = 0;
+
+            matches.forEach(match => {
+                const [fullMatch, book, chapter, verse] = match;
+                const beforeText = node.nodeValue.substring(lastIndex, match.index);
+
+                const refSpan = document.createElement("span");
+                refSpan.textContent = fullMatch;
+                refSpan.className = "verse-link";
+                refSpan.dataset.book = book.trim();
+                refSpan.dataset.chapter = chapter;
+                refSpan.dataset.verse = verse;
+                refSpan.style.color = "blue";
+                refSpan.style.cursor = "pointer";
+                refSpan.style.textDecoration = "underline";
+
+                fragment.appendChild(document.createTextNode(beforeText));
+                fragment.appendChild(refSpan);
+                lastIndex = match.index + fullMatch.length;
+            });
+
+            fragment.appendChild(document.createTextNode(node.nodeValue.substring(lastIndex)));
+            node.replaceWith(fragment);
         });
 
-        fragment.appendChild(document.createTextNode(node.nodeValue.substring(lastIndex)));
-        node.replaceWith(fragment);
+        console.log("✅ Verse detection completed!");
     }
 
     function addTooltipEvents() {
         const tooltip = createTooltip();
-        document.addEventListener("mouseover", async function(event) {
-            if (!event.target.classList.contains("bible-tooltip-ref")) return;
-            const { book, chapter, verse } = event.target.dataset;
+
+        // Use event delegation to detect dynamically added elements
+        document.body.addEventListener("mouseover", async function(event) {
+            const target = event.target.closest(".verse-link"); // Detect dynamically added elements
+            if (!target) return;
+
+            const { book, chapter, verse } = target.dataset;
 
             try {
                 const response = await fetch(`${API_URL}?book=${book}&chapter=${chapter}&verse=${verse}`);
                 const data = await response.json();
+
                 if (data.text) {
                     tooltip.innerHTML = `<b>${data.book} ${data.chapter}:${data.verse}</b><br>${data.text}<br><i>${data.credit}</i>`;
                     tooltip.style.display = "block";
                     tooltip.style.left = event.pageX + "px";
-                    tooltip.style.top = event.pageY + "px";
+                    tooltip.style.top = event.pageY + 10 + "px";
                 }
             } catch (error) {
                 console.error("Error fetching verse:", error);
             }
         });
 
-        document.addEventListener("mouseout", function(event) {
-            if (event.target.classList.contains("bible-tooltip-ref")) {
+        document.body.addEventListener("mouseout", function(event) {
+            if (event.target.classList.contains("verse-link")) {
                 tooltip.style.display = "none";
             }
         });
+
+        console.log("✅ Tooltip event listeners attached!");
     }
 
-    function scanAndReplaceTextNodes() {
-        document.body.childNodes.forEach(node => replaceBibleReferences(node));
-    }
-
-    // Initialize
+    // Initialize the script
     document.addEventListener("DOMContentLoaded", function() {
-        scanAndReplaceTextNodes();
-        addTooltipEvents();
+        replaceBibleReferences();  // Detect and wrap Bible verses
+        addTooltipEvents();        // Attach event listeners
     });
 })();
